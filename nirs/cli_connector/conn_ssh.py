@@ -1,52 +1,57 @@
-#!/usr/bin/env python3
-
 import paramiko
 import time
 
-class SSH_Conn:
+
+class SshConn:
+
+    problem_hosts = []
 
     def __init__(self, host, username, password, commands):
         self.host = host
         self.username = username
         self.password = password
         self.commands = commands
+        self.client = paramiko.SSHClient()
+        self.interactive_shell = None
 
-    def single_host_conn(host, username, password):
-        client = paramiko.SSHClient()
-        client.set_missing_host_key_policy(paramiko.AutoAddPolicy()    
-
+    def single_host_conn(self):
+        self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         try:
-            client.connect(hostname=host, username=useruse, password=sekret)
+            self.client.connect(hostname=self.host,
+                                username=self.username,
+                                password=self.password
+                                )
         except OSError as err:
-            print(err)
-            print (host, " is unreachable")
-            hosts_w_problems +=host
-            hosts_w_problems +=" "
-            continue
+            print(err, '{0} is unreachable'.format(self.host), sep='/n')
+            SshConn.problem_hosts.append(self.host)
         except paramiko.ssh_exception.AuthenticationException as err1:
-            print (err1)
-            print ("Authentication failed with", host)
-            hosts_w_problems +=host
-            hosts_w_problems +=" "
-            continue
-        interactive_shell=client.invoke_shell()
-        print("SSH подключение устанвлено к ", host)
-        return(interactive_shell)
+            print(err1,
+                  'Authentication failed with {0}'.format(self.host),
+                  sep='/n'
+                  )
+            SshConn.problem_hosts.append(self.host)
 
+        self.interactive_shell = self.client.invoke_shell()
+        print("SSH подключение устанвлено к ", self.host)
 
-    def send_commands_to_shell(self, ishell, host, commands)
-
-        f=open(host+".txt", "a")
-
-        for command in commands:
-            command +="\n"
-            ishell.send("\n")
-            ishell.send(command)
+    def send_commands_to_shell(self):
+        shell = self.interactive_shell
+        f = open(self.host + ".txt", "a")
+        for command in self.commands:
+            command += "\n"
+            shell.send("\n")
+            shell.send(command)
             time.sleep(2)
-            output=interactive_shell.recv(10000)
-            print (output.decode('utf-8'), "\n")
+            output = shell.recv(10000)
+            print(output.decode('utf-8'), "\n")
             f.write(output.decode('utf-8')+"\n")
-
         f.close()
-        client.close()
+        self.client.close()
 
+
+def main():
+    pass
+
+
+if __name__ == '__main__':
+    main()
